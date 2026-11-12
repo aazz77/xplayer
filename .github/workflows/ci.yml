@@ -83,11 +83,12 @@ jobs:
           }
           cargo build --release 2>&1
       
-      - run: |
+      - name: Package
+        run: |
           mkdir dist
           mv target/release/xplayer.exe dist/xplayer.exe
           mv libmpv-2.dll dist/libmpv-2.dll
-          tar -czvf xplayer-windows-x64.tar.gz /dist
+          tar -czvf xplayer-windows-x64.tar.gz -C dist .
       
       - name: Create Release
         uses: softprops/action-gh-release@v2

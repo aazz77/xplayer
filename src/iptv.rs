@@ -64,7 +64,7 @@ impl IptvStore {
     pub fn new() -> Result<Self> {
         let base = data_local_dir()
             .unwrap_or_else(|| PathBuf::from("."))
-            .join("mpv-gpui-player");
+            .join("xplayer");
         fs::create_dir_all(&base)?;
         let path = base.join("iptv_sources.json");
         let mut sources = Vec::new();

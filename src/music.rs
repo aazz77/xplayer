@@ -213,7 +213,7 @@ impl MusicLibrary {
     pub fn new() -> Result<Self> {
         let base = data_local_dir()
             .unwrap_or_else(|| PathBuf::from("."))
-            .join("mpv-gpui-player");
+            .join("xplayer");
         fs::create_dir_all(&base)?;
         let config_path = base.join("music_library.json");
 

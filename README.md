@@ -1,4 +1,4 @@
-# mpv-gpui-player
+# xplayer
 
 Nexus（Windows 端）风格的本地播放器，Rust + GPUI + libmpv。**浅色主题**、**仅 MPV 后端**、支持**硬解/软解切换**。
 
@@ -86,7 +86,7 @@ cargo build --release
 - 左侧导航切页；视频库/音乐库先点「+」添加本地文件夹；IPTV 点「导入」加 m3u 源或远程链接。
 - 播放页快捷键：`Space` 暂停、`←/→` ±10s、`↑/↓` 音量、`F` 全屏、`Esc` 返回。
 - **中文输入**：GPUI 0.2.2 没有成熟 IME 输入框，输入框右侧有「贴」按钮 —— 先复制文本，再点「贴」即可（搜索框、网络流 URL、IPTV 链接都用这个）。
-- 设置保存在 `%LOCALAPPDATA%\mpv-gpui-player\settings.json`（Linux 为 `~/.local/share/mpv-gpui-player/settings.json`）。
+- 设置保存在 `%LOCALAPPDATA%\xplayer\settings.json`（Linux 为 `~/.local/share/xplayer/settings.json`）。
 
 ## 已知限制
 

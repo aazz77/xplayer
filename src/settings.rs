@@ -163,7 +163,7 @@ impl Settings {
 fn path() -> PathBuf {
     data_local_dir()
         .unwrap_or_else(|| PathBuf::from("."))
-        .join("mpv-gpui-player")
+        .join("xplayer")
         .join("settings.json")
 }
 
