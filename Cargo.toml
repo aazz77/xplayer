@@ -1,0 +1,31 @@
+[package]
+name = "xplayer"
+version = "0.1.0"
+edition = "2021"
+description = "Video + IPTV player UI (GPUI aligned with Nyaterm)"
+license = "MIT OR Apache-2.0"
+
+[dependencies]
+anyhow = "1"
+gpui = "=0.2.2"
+libmpv2 = "7.0"
+libmpv2-sys = "4"
+rfd = "0.15"
+parking_lot = "0.12"
+image = { version = "0.25", default-features = false, features = ["png", "jpeg", "gif", "bmp", "webp"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+ureq = { version = "2", default-features = false, features = ["tls"] }
+smallvec = "1"
+
+[profile.release]
+lto = true
+codegen-units = 1
+strip = true
+
+# gpui -> gpui_http_client -> zed-async-tar -> xattr 0.2.3
+# Linux 上 libc 无 ENOATTR，用 vendor 内打过补丁的副本（1 行改动）
+[patch.crates-io]
+xattr = { path = "vendor/xattr" }

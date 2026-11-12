@@ -1,0 +1,98 @@
+name: CI
+
+on:
+  #push:
+    #branches: [main, master]
+  pull_request:
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build-windows:
+    name: Build (Windows)
+    runs-on: windows-latest
+    timeout-minutes: 90
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Rust cache
+        uses: Swatinem/rust-cache@v2
+
+      - name: Download libmpv (Windows)
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          New-Item -ItemType Directory -Force -Path libmpv | Out-Null
+
+          # Resolve latest mpv-dev-x86_64 asset from shinchiro releases (names include date+git hash)
+          $api = "https://api.github.com/repos/shinchiro/mpv-winbuild-cmake/releases?per_page=8"
+          $headers = @{ "User-Agent" = "mpv-gpui-player-ci"; "Accept" = "application/vnd.github+json" }
+          $releases = Invoke-RestMethod -Uri $api -Headers $headers
+          $asset = $null
+          foreach ($rel in $releases) {
+            $asset = $rel.assets |
+              Where-Object { $_.name -match '^mpv-dev-x86_64-\d{8}-git-.*\.7z$' -and $_.name -notmatch 'v3' } |
+              Select-Object -First 1
+            if ($asset) {
+              Write-Host "Using $($rel.tag_name) / $($asset.name)"
+              break
+            }
+          }
+          if (-not $asset) {
+            Write-Host "No mpv-dev asset found; continuing without prebuilt (link may fail)"
+            exit 0
+          }
+
+          Write-Host "Downloading $($asset.browser_download_url)"
+          Invoke-WebRequest -Uri $asset.browser_download_url -OutFile mpv-dev.7z -UseBasicParsing
+          7z x mpv-dev.7z -olibmpv -y
+          Get-ChildItem -Recurse libmpv | Select-Object -First 40 FullName
+
+          $dll = Get-ChildItem -Recurse -Filter "libmpv*.dll" libmpv | Select-Object -First 1
+          $lib = Get-ChildItem -Recurse -Filter "libmpv*.lib" libmpv | Select-Object -First 1
+          if ($dll) { Write-Host "DLL: $($dll.FullName)" }
+          if ($lib) { Write-Host "LIB: $($lib.FullName)" }
+          if ($dll) {
+            $dir = $dll.DirectoryName
+            echo "MPV_LIB_DIR=$dir" >> $env:GITHUB_ENV
+            echo "$dir" >> $env:GITHUB_PATH
+            Copy-Item $dll.FullName -Destination .
+            if ($dll.Name -ne "libmpv-2.dll") {
+              Copy-Item $dll.FullName -Destination "./libmpv-2.dll" -Force
+            }
+            if ($lib) {
+              Copy-Item $lib.FullName -Destination .
+              Copy-Item $lib.FullName -Destination "./mpv.lib" -Force -ErrorAction SilentlyContinue
+            }
+          }
+
+      - name: Cargo build
+        shell: pwsh
+        run: |
+          if ($env:MPV_LIB_DIR) {
+            $env:LIBRARY_PATH = $env:MPV_LIB_DIR
+            $env:LIB = "$($env:MPV_LIB_DIR);$env:LIB"
+            $env:Path = "$($env:MPV_LIB_DIR);$env:Path"
+            $env:RUSTFLAGS = "-L native=$($env:MPV_LIB_DIR)"
+          }
+          cargo build --release 2>&1
+      
+      - run: |
+          mkdir dist
+          mv target/release/xplayer.exe dist/xplayer.exe
+          mv libmpv-2.dll dist/libmpv-2.dll
+          tar -czvf xplayer-windows-x64.tar.gz /dist
+      
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: test
+          files: xplayer-windows-x64.tar.gz
+      
+      
